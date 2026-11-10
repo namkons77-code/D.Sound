@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panasonic D-sound Hi-Res Portable FLAC Player</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@600;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    .font-lcd { font-family: 'Share Tech Mono', monospace; }
+    .font-brand { font-family: 'Orbitron', sans-serif; }
+    
+    .metal-chassis {
+      background: radial-gradient(ellipse at 50% 15%, #30343e 0%, #1c1f26 60%, #121419 100%);
+      box-shadow: 
+        inset 0 1px 2px rgba(255, 255, 255, 0.22),
+        inset 0 -3px 8px rgba(0, 0, 0, 0.9),
+        0 20px 45px rgba(0, 0, 0, 0.8),
+        0 2px 5px rgba(0, 0, 0, 0.5);
+      border: 1.5px solid #4a5160;
+    }
+
+    .hires-badge {
+      background: #000000;
+      border: 1.5px solid #d4af37;
+      color: #f7d560;
+      box-shadow: 0 0 10px rgba(212, 175, 55, 0.35);
+    }
+    
+    .lcd-screen {
+      background: #04121a;
+      background-image: 
+        radial-gradient(ellipse at center, rgba(14, 55, 74, 0.5) 0%, rgba(2, 12, 18, 0.95) 100%),
+        linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+      background-size: 100% 100%, 3px 3px, 3px 3px;
+      box-shadow: inset 0 3px 12px rgba(0, 0, 0, 0.95), 0 0 16px rgba(6, 182, 212, 0.15);
+      border: 2px solid #162a38;
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      background: #111827;
+      border: 1px solid #374151;
+      height: 6px;
+      border-radius: 9999px;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 16px;
+      width: 16px;
+      border-radius: 50%;
+      background: #06b6d4;
+      box-shadow: 0 0 8px #06b6d4;
+      cursor: pointer;
+      border: 2px solid #e0f2fe;
+    }
+    input[type=range]:focus {
+      outline: none;
+    }
+
+    .tactile-btn {
+      background: linear-gradient(145deg, #2b303b, #1b1e25);
+      box-shadow: 2px 2px 5px #0d0f13, -1px -1px 3px rgba(255,255,255,0.08);
+      transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+    }
+    .tactile-btn:active {
+      background: linear-gradient(145deg, #16181e, #242831);
+      box-shadow: inset 2px 2px 4px #08090b, inset -1px -1px 2px rgba(255,255,255,0.05);
+      transform: translateY(1px);
+    }
+    .tactile-btn.active {
+      border-color: #06b6d4;
+      color: #22d3ee;
+      box-shadow: 0 0 12px rgba(6, 182, 212, 0.45), inset 0 0 8px rgba(6, 182, 212, 0.25);
+    }
+
+    .vertical-slider {
+      -webkit-appearance: slider-vertical;
+      writing-mode: bt-lr;
+      width: 18px;
+    }
+
+    .drop-active {
+      border-color: #22d3ee !important;
+      box-shadow: 0 0 30px rgba(34, 211, 238, 0.4) !important;
+    }
+
+    #vizContainer {
+      contain: paint;
+    }
+  </style>
+</head>
+<body class="bg-neutral-950 text-slate-200 min-h-screen flex items-center justify-center p-3 sm:p-6 font-sans select-none">
+
+  <!-- Player Main Shell -->
+  <div id="playerChassis" class="w-full max-w-4xl metal-chassis rounded-3xl p-5 sm:p-7 relative overflow-hidden transition-all">
+    
+    <!-- Top Header & Badges -->
+    <div class="flex flex-wrap items-center justify-between pb-4 border-b border-neutral-700/80 mb-5 gap-3">
+      <div class="flex items-center space-x-3">
+        <div id="powerLed" class="w-3.5 h-3.5 rounded-full bg-cyan-400 shadow-[0_0_10px_#22d3ee] animate-pulse"></div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] tracking-[0.25em] text-neutral-400 font-semibold uppercase">Panasonic Audio Laboratory</span>
+            <span class="hires-badge font-brand text-[9px] font-black px-1.5 py-0.5 rounded tracking-tighter uppercase inline-block">Hi-Res AUDIO</span>
+          </div>
+          <div class="font-brand font-black text-xl sm:text-2xl tracking-wider text-slate-100 flex items-center gap-2">
+            <span>D.SOUND</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-700/60 font-sans font-bold">FULL DIGITAL AMP</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Quick Demo & Open File Buttons -->
+      <div class="flex items-center flex-wrap gap-2 text-xs">
+        <button id="btnDemo" class="tactile-btn px-3 py-2 rounded-lg border border-amber-600/80 hover:border-amber-400 text-amber-300 font-bold transition flex items-center gap-2 shadow-[0_0_10px_rgba(245,158,11,0.2)]">
+          <span class="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_#fbbf24]"></span>
+          <span>▶ 96kHz HI-RES DEMO</span>
+        </button>
+
+        <label for="fileInput" class="tactile-btn px-3 py-2 rounded-lg cursor-pointer border border-neutral-600 hover:border-cyan-400 text-slate-200 font-bold flex items-center gap-1.5 transition">
+          <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+          <span>OPEN / ADD FILES</span>
+        </label>
+        <input type="file" id="fileInput" multiple accept="audio/*,.flac,.wav,.mp3,.ogg,.m4a,.aac" class="hidden">
+      </div>
+    </div>
+
+    <!-- Retro LCD Screen -->
+    <div class="lcd-screen rounded-2xl p-4 sm:p-5 mb-5 text-cyan-400 font-lcd">
+      <!-- Top LCD Meta Info -->
+      <div class="flex flex-wrap items-center justify-between text-xs sm:text-sm border-b border-cyan-900/60 pb-2 mb-3 gap-2">
+        <div class="flex items-center flex-wrap gap-2 sm:gap-3">
+          <span class="px-2 py-0.5 rounded bg-cyan-950 border border-cyan-600/70 font-bold" id="lcdCodec">FLAC 24-BIT</span>
+          <span class="text-amber-300 font-bold" id="lcdSampleRate">96.0 kHz</span>
+          <span class="text-neutral-400" id="lcdBitrate">4608 kbps</span>
+          <span class="text-emerald-400 font-bold" id="lcdPlayState">READY</span>
+        </div>
+        <div class="flex items-center space-x-1.5 text-[11px]">
+          <span id="badgeSxbs" class="px-1.5 py-0.5 rounded bg-amber-950/70 border border-amber-600/60 text-amber-300 font-bold transition-opacity">S-XBS</span>
+          <span id="badgeRemaster" class="px-1.5 py-0.5 rounded bg-emerald-950/70 border border-emerald-600/60 text-emerald-300 font-bold transition-opacity">RE-MASTER</span>
+          <span id="badge3d" class="px-1.5 py-0.5 rounded bg-cyan-950/70 border border-cyan-600/60 text-cyan-300 font-bold opacity-30 transition-opacity">3D-SURR</span>
+          <span id="badgeAgc" class="px-1.5 py-0.5 rounded bg-pink-950/70 border border-pink-600/60 text-pink-300 font-bold transition-opacity">AGC-LIMIT</span>
+        </div>
+      </div>
+
+      <!-- Track Name & Timecode -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+        <div class="overflow-hidden">
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] text-amber-400 font-bold tracking-widest uppercase px-1.5 py-0.2 bg-amber-950/60 border border-amber-700/50 rounded" id="lcdTrackIndex">TRK 00/00</span>
+            <span class="text-[10px] text-cyan-600 font-bold tracking-widest uppercase" id="lcdStatusHint">Playing Source (Drag & Drop Multiple Files):</span>
+          </div>
+          <div id="lcdTitle" class="text-lg sm:text-xl font-bold tracking-wide truncate text-cyan-200 mt-0.5">
+            CLICK [OPEN / ADD FILES] TO LOAD TRACKS
+          </div>
+        </div>
+        <div class="text-right flex items-baseline justify-end space-x-2 shrink-0">
+          <span id="lcdCurTime" class="text-2xl sm:text-3xl font-bold tracking-wider text-cyan-300">00:00</span>
+          <span class="text-cyan-700 text-lg">/</span>
+          <span id="lcdTotalTime" class="text-cyan-600 text-sm">00:00</span>
+        </div>
+      </div>
+
+      <!-- Real-time Spectrum Analyser / Oscilloscope -->
+      <div class="relative w-full h-32 sm:h-36 bg-black/60 rounded-xl overflow-hidden border border-cyan-950 cursor-pointer" id="vizContainer" title="Click to switch Spectrum / Oscilloscope">
+        <canvas id="analyserCanvas" class="w-full h-full block"></canvas>
+        <div class="absolute top-1.5 left-2.5 text-[10px] text-cyan-500/80 pointer-events-none font-lcd flex items-center gap-2">
+          <span id="vizModeLabel">[SPECTRUM ANALYSER - CLICK TO SWITCH]</span>
+        </div>
+        <div class="absolute bottom-1 right-2 text-[10px] text-cyan-500/70 pointer-events-none font-lcd">
+          20Hz ── 1kHz ── 10kHz ── 24kHz ── <span class="text-amber-400 font-bold">48kHz (Hi-Res Air)</span>
+        </div>
+      </div>
+
+      <!-- Progress Track Bar -->
+      <div class="mt-3 flex items-center space-x-2">
+        <input type="range" id="seekBar" min="0" max="100" value="0" step="0.1" class="w-full cursor-pointer">
+      </div>
+    </div>
+
+    <!-- Transport Control Bar -->
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-5 p-3 bg-neutral-900/70 rounded-2xl border border-neutral-800">
+      <div class="flex items-center flex-wrap gap-2">
+        <button id="btnPrev" title="Previous Track" class="tactile-btn px-3 py-2 rounded-xl border border-neutral-600 hover:border-cyan-400 text-slate-300 font-bold text-xs sm:text-sm">
+          ⏮ PREV
+        </button>
+        <button id="btnPlay" class="tactile-btn px-4 py-2 rounded-xl border border-neutral-600 hover:border-cyan-400 text-cyan-400 font-bold flex items-center gap-2 text-xs sm:text-sm">
+          <span id="playIcon">▶</span>
+          <span id="playBtnText">PLAY</span>
+        </button>
+        <button id="btnStop" class="tactile-btn px-3.5 py-2 rounded-xl border border-neutral-600 hover:border-neutral-400 text-slate-300 font-bold text-xs sm:text-sm">
+          ■ STOP
+        </button>
+        <button id="btnNext" title="Next Track" class="tactile-btn px-3 py-2 rounded-xl border border-neutral-600 hover:border-cyan-400 text-slate-300 font-bold text-xs sm:text-sm">
+          NEXT ⏭
+        </button>
+        <button id="btnRepeat" class="tactile-btn active px-2.5 py-2 rounded-xl border border-neutral-700 hover:border-cyan-400 text-xs font-bold transition">
+          🔁 ALL
+        </button>
+        <button id="btnShuffle" class="tactile-btn px-2.5 py-2 rounded-xl border border-neutral-700 hover:border-cyan-400 text-neutral-400 text-xs font-bold transition">
+          🔀 SHUFFLE
+        </button>
+        <button id="btnBypass" class="tactile-btn px-3 py-2 rounded-xl border border-neutral-700 hover:border-rose-500 text-neutral-400 font-bold text-xs transition">
+          DIRECT (OFF)
+        </button>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <span class="text-xs font-lcd text-neutral-400">VOL:</span>
+        <input type="range" id="volSlider" min="0" max="1" step="0.01" value="0.85" class="w-24 sm:w-32">
+        <span id="volText" class="text-xs font-lcd text-cyan-400 w-8">85%</span>
+      </div>
+    </div>
+
+    <!-- Playlist Module -->
+    <div class="bg-neutral-900/90 rounded-2xl p-4 sm:p-5 border border-neutral-800 mb-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_#fbbf24]"></span>
+          <span class="text-xs font-bold tracking-wider text-slate-200 font-brand">D-SOUND TRACK PLAYLIST</span>
+          <span id="playlistCount" class="text-[11px] font-lcd px-2 py-0.5 rounded bg-neutral-950 text-cyan-400 border border-neutral-800">0 TRACKS</span>
+        </div>
+        <div class="flex items-center gap-2 text-[11px]">
+          <label for="fileInput" class="tactile-btn px-2.5 py-1 rounded border border-neutral-700 hover:border-cyan-400 text-cyan-300 font-bold cursor-pointer transition">
+            + ADD TRACKS
+          </label>
+          <button id="btnClearPlaylist" class="tactile-btn px-2.5 py-1 rounded border border-neutral-700 hover:border-rose-500 text-neutral-400 hover:text-rose-400 font-bold transition">
+            CLEAR ALL
+          </button>
+        </div>
+      </div>
+
+      <div id="playlistContainer" class="max-h-44 overflow-y-auto bg-neutral-950/80 rounded-xl border border-neutral-800/90 divide-y divide-neutral-800/60 font-lcd text-xs">
+        <div class="p-4 text-center text-neutral-500">
+          NO TRACKS IN QUEUE — DROP MULTIPLE FLAC / AUDIO FILES HERE OR CLICK [+ ADD TRACKS]
+        </div>
+      </div>
+    </div>
+
+    <!-- D-sound DSP 4-Module Section -->
+    <div class="bg-neutral-900/90 rounded-2xl p-4 sm:p-5 border border-neutral-800 mb-5">
+      <div class="text-xs font-bold tracking-wider text-slate-200 font-brand mb-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+          <span>D-SOUND DIGITAL SIGNAL PROCESSING MODULES</span>
+        </div>
+        <span class="text-[10px] font-lcd text-neutral-400">32-BIT FLOAT ENGINE</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        
+        <!-- 1. S-XBS Bass -->
+        <div class="bg-neutral-950/70 p-3.5 rounded-xl border border-neutral-800 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-bold font-brand text-amber-400">S-XBS BASS</span>
+            <input type="checkbox" id="chkSxbs" checked class="w-4 h-4 accent-amber-500 cursor-pointer">
+          </div>
+          <p class="text-[11px] text-neutral-400 mb-2">65Hz low-shelf sub-bass amplification.</p>
+          <div>
+            <div class="flex justify-between text-[10px] font-lcd text-neutral-400 mb-1">
+              <span>BOOST</span>
+              <span id="valSxbs" class="text-amber-400 font-bold">+6.0 dB</span>
+            </div>
+            <input type="range" id="sliderSxbs" min="0" max="15" step="0.5" value="6" class="w-full">
+          </div>
+        </div>
+
+        <!-- 2. Digital Re-Master -->
+        <div class="bg-neutral-950/70 p-3.5 rounded-xl border border-neutral-800 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-bold font-brand text-emerald-400">RE-MASTER</span>
+            <input type="checkbox" id="chkRemaster" checked class="w-4 h-4 accent-emerald-500 cursor-pointer">
+          </div>
+          <p class="text-[11px] text-neutral-400 mb-2">4x oversampled ultrasonic exciter (>11kHz).</p>
+          <div>
+            <div class="flex justify-between text-[10px] font-lcd text-neutral-400 mb-1">
+              <span>EXCITATION</span>
+              <span id="valRemaster" class="text-emerald-400 font-bold">50%</span>
+            </div>
+            <input type="range" id="sliderRemaster" min="0" max="100" step="5" value="50" class="w-full">
+          </div>
+        </div>
+
+        <!-- 3. 3D Surround Sound -->
+        <div class="bg-neutral-950/70 p-3.5 rounded-xl border border-neutral-800 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-bold font-brand text-cyan-300">3D SURROUND</span>
+            <input type="checkbox" id="chk3d" class="w-4 h-4 accent-cyan-400 cursor-pointer">
+          </div>
+          <p class="text-[11px] text-neutral-400 mb-2">Haas ITD cross-feed stereo widener.</p>
+          <div>
+            <div class="flex justify-between text-[10px] font-lcd text-neutral-400 mb-1">
+              <span>WIDTH</span>
+              <span id="val3d" class="text-cyan-300 font-bold">0%</span>
+            </div>
+            <input type="range" id="slider3d" min="0" max="100" step="5" value="0" class="w-full">
+          </div>
+        </div>
+
+        <!-- 4. Digital AGC Limiter -->
+        <div class="bg-neutral-950/70 p-3.5 rounded-xl border border-neutral-800 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-bold font-brand text-pink-400">AGC LIMITER</span>
+            <input type="checkbox" id="chkAgc" checked class="w-4 h-4 accent-pink-500 cursor-pointer">
+          </div>
+          <p class="text-[11px] text-neutral-400 mb-2">Anti-clipping protection for heavy bass.</p>
+          <div>
+            <div class="flex justify-between text-[10px] font-lcd text-neutral-400 mb-1">
+              <span>LIMIT</span>
+              <span id="valAgc" class="text-pink-400 font-bold">-0.5 dB</span>
+            </div>
+            <input type="range" id="sliderAgc" min="-12" max="0" step="0.5" value="-0.5" class="w-full">
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 5-Band Hi-Res Calibrated Equalizer & Presets -->
+    <div class="bg-neutral-900/90 rounded-2xl p-4 sm:p-5 border border-neutral-800">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold tracking-wider text-slate-200 font-brand">5-BAND MASTER EQUALIZER</span>
+          <span class="text-[10px] font-lcd text-amber-400">[AIR-BAND 16kHz+]</span>
+        </div>
+        <!-- Classic Panasonic EQ Presets -->
+        <div class="flex items-center gap-1.5 text-[10px] font-brand">
+          <button data-preset="flat" class="eq-preset tactile-btn px-2.5 py-1 rounded border border-neutral-700 text-slate-300 hover:border-cyan-400">FLAT</button>
+          <button data-preset="heavy" class="eq-preset tactile-btn px-2.5 py-1 rounded border border-neutral-700 text-slate-300 hover:border-cyan-400">HEAVY</button>
+          <button data-preset="clear" class="eq-preset tactile-btn active px-2.5 py-1 rounded border border-neutral-700 text-slate-300 hover:border-cyan-400">CLEAR</button>
+          <button data-preset="vocal" class="eq-preset tactile-btn px-2.5 py-1 rounded border border-neutral-700 text-slate-300 hover:border-cyan-400">VOCAL</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-5 gap-2 sm:gap-4 text-center">
+        <div class="flex flex-col items-center">
+          <span class="text-[10px] font-lcd text-neutral-400 mb-1">60Hz</span>
+          <input type="range" id="eq0" min="-12" max="12" step="1" value="0" class="vertical-slider h-24 my-1">
+          <span id="eqVal0" class="text-[10px] font-lcd text-cyan-400 mt-1">0dB</span>
+        </div>
+        <div class="flex flex-col items-center">
+          <span class="text-[10px] font-lcd text-neutral-400 mb-1">250Hz</span>
+          <input type="range" id="eq1" min="-12" max="12" step="1" value="0" class="vertical-slider h-24 my-1">
+          <span id="eqVal1" class="text-[10px] font-lcd text-cyan-400 mt-1">0dB</span>
+        </div>
+        <div class="flex flex-col items-center">
+          <span class="text-[10px] font-lcd text-neutral-400 mb-1">1.0kHz</span>
+          <input type="range" id="eq2" min="-12" max="12" step="1" value="0" class="vertical-slider h-24 my-1">
+          <span id="eqVal2" class="text-[10px] font-lcd text-cyan-400 mt-1">0dB</span>
+        </div>
+        <div class="flex flex-col items-center">
+          <span class="text-[10px] font-lcd text-neutral-400 mb-1">4.0kHz</span>
+          <input type="range" id="eq3" min="-12" max="12" step="1" value="0" class="vertical-slider h-24 my-1">
+          <span id="eqVal3" class="text-[10px] font-lcd text-cyan-400 mt-1">0dB</span>
+        </div>
+        <div class="flex flex-col items-center">
+          <span class="text-[10px] font-lcd text-amber-300 mb-1">16kHz+</span>
+          <input type="range" id="eq4" min="-12" max="12" step="1" value="3" class="vertical-slider h-24 my-1">
+          <span id="eqVal4" class="text-[10px] font-lcd text-amber-300 mt-1">+3dB</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // --- AUDIO CONTEXT & D-SOUND DSP ENGINE ---
+    let audioCtx = null;
+    let audioBuffer = null;
+    let sourceNode = null;
+    let audioElement = null;
+    let audioSourceNode = null;
+    let currentObjectUrl = null;
+    let currentPlayingFileSize = 0;
+    let isElementSource = false;
+    let isPlaying = false;
+    let isDspBypassed = false;
+    let vizMode = 'spectrum'; // 'spectrum' | 'oscilloscope'
+    let startTime = 0;
+    let pauseOffset = 0;
+
+    // Playlist State
+    let playlist = []; // Array of { id, title, ext, sizeText, file, isDemo }
+    let currentTrackIndex = -1;
+    let repeatMode = 'all'; // 'off' | 'all' | 'one'
+    let isShuffle = false;
+
+    // Node References
+    let sxbsFilter = null;
+    let eqFilters = [];
+    const eqFreqs = [60, 250, 1000, 4000, 16000];
+    const eqTypes = ['lowshelf', 'peaking', 'peaking', 'peaking', 'highshelf'];
+
+    let remasterHp = null;
+    let remasterShaper = null;
+    let remasterGain = null;
+
+    let delayL = null, delayR = null;
+    let surroundWidener = null;
+
+    let agcLimiter = null;
+    let masterGain = null;
+    let analyserNode = null;
+
+    // UI Elements Cache
+    const playerChassis = document.getElementById('playerChassis');
+    const btnPlay = document.getElementById('btnPlay');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    const btnRepeat = document.getElementById('btnRepeat');
+    const btnShuffle = document.getElementById('btnShuffle');
+    const playIcon = document.getElementById('playIcon');
+    const playBtnText = document.getElementById('playBtnText');
+    const btnStop = document.getElementById('btnStop');
+    const btnBypass = document.getElementById('btnBypass');
+    const btnDemo = document.getElementById('btnDemo');
+    const fileInput = document.getElementById('fileInput');
+    const playlistContainer = document.getElementById('playlistContainer');
+    const playlistCount = document.getElementById('playlistCount');
+    const btnClearPlaylist = document.getElementById('btnClearPlaylist');
+    const lcdTrackIndex = document.getElementById('lcdTrackIndex');
+    const seekBar = document.getElementById('seekBar');
+    const volSlider = document.getElementById('volSlider');
+    const volText = document.getElementById('volText');
+
+    const lcdTitle = document.getElementById('lcdTitle');
+    const lcdCodec = document.getElementById('lcdCodec');
+    const lcdSampleRate = document.getElementById('lcdSampleRate');
+    const lcdBitrate = document.getElementById('lcdBitrate');
+    const lcdPlayState = document.getElementById('lcdPlayState');
+    const lcdCurTime = document.getElementById('lcdCurTime');
+    const lcdTotalTime = document.getElementById('lcdTotalTime');
+
+    const badgeSxbs = document.getElementById('badgeSxbs');
+    const badgeRemaster = document.getElementById('badgeRemaster');
+    const badge3d = document.getElementById('badge3d');
+    const badgeAgc = document.getElementById('badgeAgc');
+
+    const chkSxbs = document.getElementById('chkSxbs');
+    const sliderSxbs = document.getElementById('sliderSxbs');
+    const valSxbs = document.getElementById('valSxbs');
+
+    const chkRemaster = document.getElementById('chkRemaster');
+    const sliderRemaster = document.getElementById('sliderRemaster');
+    const valRemaster = document.getElementById('valRemaster');
+
+    const chk3d = document.getElementById('chk3d');
+    const slider3d = document.getElementById('slider3d');
+    const val3d = document.getElementById('val3d');
+
+    const chkAgc = document.getElementById('chkAgc');
+    const sliderAgc = document.getElementById('sliderAgc');
+    const valAgc = document.getElementById('valAgc');
+
+    // Cache EQ Elements
+    const eqSliders = eqFreqs.map((_, idx) => document.getElementById(`eq${idx}`));
+    const eqValLabels = eqFreqs.map((_, idx) => document.getElementById(`eqVal${idx}`));
+
+    // Canvas & Visualizer
+    const canvas = document.getElementById('analyserCanvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const vizContainer = document.getElementById('vizContainer');
+    const vizModeLabel = document.getElementById('vizModeLabel');
+
+    let canvasW = 0;
+    let canvasH = 0;
+    let normalGrad = null;
+    let hiResGrad = null;
+
+    let lastRenderedTime = '';
+    let lastSeekPct = -1;
+    let isUserSeeking = false;
+
+    // Helper: Escape HTML string
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Helper: Smooth AudioParam Automation (prevents clicks & pops)
+    function setAudioParam(param, targetVal, timeConstant = 0.02) {
+      if (!param || !audioCtx) return;
+      const now = audioCtx.currentTime;
+      try {
+        param.cancelScheduledValues(now);
+        param.setTargetAtTime(targetVal, now, timeConstant);
+      } catch (e) {
+        param.value = targetVal;
+      }
+    }
+
+    // Revoke object URL safely to prevent memory leaks
+    function revokeCurrentUrl() {
+      if (currentObjectUrl) {
+        URL.revokeObjectURL(currentObjectUrl);
+        currentObjectUrl = null;
+      }
+    }
+
+    function initAudioGraph() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        try {
+          audioCtx = new AudioContextClass({ latencyHint: 'playback' });
+        } catch(e) {
+          audioCtx = new AudioContextClass();
+        }
+        buildDspGraph();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function buildDspGraph() {
+      // 1. S-XBS Low-shelf filter at 65Hz
+      sxbsFilter = audioCtx.createBiquadFilter();
+      sxbsFilter.type = 'lowshelf';
+      sxbsFilter.frequency.value = 65;
+
+      // 2. 5-Band Equalizer
+      eqFilters = eqFreqs.map((freq, idx) => {
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = eqTypes[idx];
+        filter.frequency.value = freq;
+        const slider = eqSliders[idx];
+        filter.gain.value = slider ? parseFloat(slider.value) : 0;
+        return filter;
+      });
+
+      for (let i = 0; i < eqFilters.length - 1; i++) {
+        eqFilters[i].connect(eqFilters[i + 1]);
+      }
+
+      // 3. Digital Re-Master Exciter (>11kHz)
+      remasterHp = audioCtx.createBiquadFilter();
+      remasterHp.type = 'highpass';
+      remasterHp.frequency.value = 11000;
+
+      remasterShaper = audioCtx.createWaveShaper();
+      remasterShaper.curve = createHarmonicCurve(0.65);
+      remasterShaper.oversample = '4x';
+
+      remasterGain = audioCtx.createGain();
+
+      // 4. 3D Surround Haas Delay
+      delayL = audioCtx.createDelay();
+      delayR = audioCtx.createDelay();
+      delayL.delayTime.value = 0.009; // 9ms
+      delayR.delayTime.value = 0.014; // 14ms
+
+      surroundWidener = audioCtx.createGain();
+
+      // 5. AGC Limiter
+      agcLimiter = audioCtx.createDynamicsCompressor();
+
+      // Master Gain & Analyser
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = parseFloat(volSlider.value);
+
+      analyserNode = audioCtx.createAnalyser();
+      analyserNode.fftSize = 2048;
+      analyserNode.smoothingTimeConstant = 0.82;
+
+      // Wire static internal DSP graph
+      sxbsFilter.connect(eqFilters[0]);
+      const eqOutput = eqFilters[eqFilters.length - 1];
+
+      // Parallel Re-Master branch
+      eqOutput.connect(remasterHp);
+      remasterHp.connect(remasterShaper);
+      remasterShaper.connect(remasterGain);
+
+      // Parallel 3D Surround branch
+      eqOutput.connect(delayL);
+      delayL.connect(delayR);
+      delayR.connect(surroundWidener);
+
+      // Sum into AGC Limiter
+      eqOutput.connect(agcLimiter);
+      remasterGain.connect(agcLimiter);
+      surroundWidener.connect(agcLimiter);
+
+      // Output chain
+      agcLimiter.connect(masterGain);
+      masterGain.connect(analyserNode);
+      analyserNode.connect(audioCtx.destination);
+
+      applyAllDspParameters();
+      startVisualizer();
+    }
+
+    function applyAllDspParameters() {
+      if (!audioCtx) return;
+      const tc = 0.02; // Smooth 20ms transition, click-free
+
+      if (isDspBypassed) {
+        setAudioParam(sxbsFilter.gain, 0, tc);
+        setAudioParam(remasterGain.gain, 0, tc);
+        setAudioParam(surroundWidener.gain, 0, tc);
+        setAudioParam(agcLimiter.threshold, 0, tc);
+        setAudioParam(agcLimiter.ratio, 1, tc);
+        eqFilters.forEach(f => setAudioParam(f.gain, 0, tc));
+        return;
+      }
+
+      setAudioParam(sxbsFilter.gain, chkSxbs.checked ? parseFloat(sliderSxbs.value) : 0, tc);
+      setAudioParam(remasterGain.gain, chkRemaster.checked ? (parseFloat(sliderRemaster.value) / 100) * 0.85 : 0, tc);
+      setAudioParam(surroundWidener.gain, chk3d.checked ? (parseFloat(slider3d.value) / 100) * 0.55 : 0, tc);
+
+      if (chkAgc.checked) {
+        setAudioParam(agcLimiter.threshold, parseFloat(sliderAgc.value), tc);
+        setAudioParam(agcLimiter.knee, 2, tc);
+        setAudioParam(agcLimiter.ratio, 20, tc);
+        setAudioParam(agcLimiter.attack, 0.002, tc);
+        setAudioParam(agcLimiter.release, 0.05, tc);
+      } else {
+        setAudioParam(agcLimiter.threshold, 0, tc);
+        setAudioParam(agcLimiter.ratio, 1, tc);
+      }
+
+      eqFilters.forEach((f, idx) => {
+        const slider = eqSliders[idx];
+        if (slider) setAudioParam(f.gain, parseFloat(slider.value), tc);
+      });
+    }
+
+    function createHarmonicCurve(amount) {
+      const k = amount * 10;
+      const n_samples = 2048; // Optimal curve resolution for WaveShaper
+      const curve = new Float32Array(n_samples);
+      const deg = Math.PI / 180;
+      const invHalf = 2 / n_samples;
+      for (let i = 0; i < n_samples; ++i) {
+        const x = i * invHalf - 1;
+        curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+      }
+      return curve;
+    }
+
+    function connectSourceToDsp(source) {
+      source.connect(sxbsFilter);
+    }
+
+    // Locate 'fLaC' magic signature even if an ID3v2 tag is prepended
+    function findFlacOffset(uint8) {
+      // Check direct 'fLaC' at byte 0
+      if (uint8.length >= 42 && uint8[0] === 0x66 && uint8[1] === 0x4C && uint8[2] === 0x61 && uint8[3] === 0x43) {
+        return 0;
+      }
+      // Check prepended ID3v2 header ('ID3')
+      if (uint8.length >= 10 && uint8[0] === 0x49 && uint8[1] === 0x44 && uint8[2] === 0x33) {
+        const size = ((uint8[6] & 0x7f) << 21) | ((uint8[7] & 0x7f) << 14) | ((uint8[8] & 0x7f) << 7) | (uint8[9] & 0x7f);
+        const searchStart = Math.min(uint8.length - 4, 10 + size);
+        if (uint8[searchStart] === 0x66 && uint8[searchStart + 1] === 0x4C && uint8[searchStart + 2] === 0x61 && uint8[searchStart + 3] === 0x43) {
+          return searchStart;
+        }
+      }
+      // Scan first 512KB for 'fLaC' signature
+      const limit = Math.min(uint8.length - 42, 524288);
+      for (let i = 0; i < limit; i++) {
+        if (uint8[i] === 0x66 && uint8[i + 1] === 0x4C && uint8[i + 2] === 0x61 && uint8[i + 3] === 0x43) {
+          if ((uint8[i + 4] & 0x7F) === 0) {
+            return i;
+          }
+        }
+      }
+      return -1;
+    }
+
+    // Parse native FLAC STREAMINFO binary header & build clean/stripped buffers
+    function inspectAndSanitizeFlac(arrayBuffer) {
+      try {
+        const uint8 = new Uint8Array(arrayBuffer);
+        const flacOffset = findFlacOffset(uint8);
+        if (flacOffset === -1) return null;
+
+        const view = new DataView(arrayBuffer, flacOffset);
+        if (view.byteLength < 42) return null;
+
+        // STREAMINFO payload starts 8 bytes after 'fLaC'
+        const b18 = view.getUint8(18);
+        const b19 = view.getUint8(19);
+        const b20 = view.getUint8(20);
+        const b21 = view.getUint8(21);
+
+        const sampleRate = (b18 << 12) | (b19 << 4) | (b20 >> 4);
+        const channels = ((b20 >> 1) & 0x07) + 1;
+        const bitsPerSample = (((b20 & 0x01) << 4) | (b21 >> 4)) + 1;
+
+        // Walk metadata blocks to find where raw audio frames begin
+        let pos = flacOffset + 4;
+        const streamInfoOffset = pos + 4;
+        let isLast = false;
+        let validWalk = true;
+
+        while (!isLast && pos + 4 <= uint8.length) {
+          const headerByte = uint8[pos];
+          isLast = (headerByte & 0x80) !== 0;
+          const blockLen = (uint8[pos + 1] << 16) | (uint8[pos + 2] << 8) | uint8[pos + 3];
+          pos += 4 + blockLen;
+          if (blockLen < 0 || pos > uint8.length) {
+            validWalk = false;
+            break;
+          }
+        }
+
+        // Clean buffer without leading ID3v2 tags (slice once)
+        const cleanBuffer = flacOffset > 0 ? arrayBuffer.slice(flacOffset) : null;
+
+        // Stripped buffer containing ONLY 'fLaC' + STREAMINFO + Audio Frames (removes corrupt/huge Album Art)
+        let strippedBuffer = null;
+        if (validWalk && pos < uint8.length) {
+          const audioFramesLen = uint8.length - pos;
+          const out = new Uint8Array(4 + 4 + 34 + audioFramesLen);
+          // 'fLaC'
+          out[0] = 0x66; out[1] = 0x4C; out[2] = 0x61; out[3] = 0x43;
+          // STREAMINFO header with isLast=1 (0x80) and length=34 (0x000022)
+          out[4] = 0x80; out[5] = 0x00; out[6] = 0x00; out[7] = 0x22;
+          // Copy 34 bytes of STREAMINFO
+          out.set(uint8.subarray(streamInfoOffset, streamInfoOffset + 34), 8);
+          // Copy all audio frames
+          out.set(uint8.subarray(pos), 42);
+          strippedBuffer = out.buffer;
+        }
+
+        return { sampleRate, channels, bitsPerSample, cleanBuffer, strippedBuffer };
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function playAudio(offset = 0) {
+      if (!audioBuffer) return;
+      initAudioGraph();
+
+      if (sourceNode) {
+        try { sourceNode.stop(); } catch(e) {}
+        sourceNode.disconnect();
+      }
+
+      sourceNode = audioCtx.createBufferSource();
+      sourceNode.buffer = audioBuffer;
+      connectSourceToDsp(sourceNode);
+
+      sourceNode.onended = () => {
+        if (isPlaying && (audioCtx.currentTime - startTime >= audioBuffer.duration - offset - 0.15)) {
+          handleTrackEnded();
+        }
+      };
+
+      sourceNode.start(0, offset);
+      startTime = audioCtx.currentTime - offset;
+      pauseOffset = offset;
+      isPlaying = true;
+
+      playIcon.textContent = '❚❚';
+      playBtnText.textContent = 'PAUSE';
+      lcdPlayState.textContent = 'PLAYING';
+    }
+
+    function pauseAudio() {
+      if (!isPlaying || !sourceNode) return;
+      pauseOffset = audioCtx.currentTime - startTime;
+      try { sourceNode.stop(); } catch(e) {}
+      sourceNode.disconnect();
+      sourceNode = null;
+      isPlaying = false;
+
+      playIcon.textContent = '▶';
+      playBtnText.textContent = 'RESUME';
+      lcdPlayState.textContent = 'PAUSED';
+    }
+
+    function stopAudio() {
+      if (sourceNode) {
+        try { sourceNode.stop(); } catch(e) {}
+        sourceNode.disconnect();
+        sourceNode = null;
+      }
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+      }
+      isPlaying = false;
+      pauseOffset = 0;
+      seekBar.value = 0;
+      lastSeekPct = 0;
+      lastRenderedTime = '00:00';
+      lcdCurTime.textContent = '00:00';
+      playIcon.textContent = '▶';
+      playBtnText.textContent = 'PLAY';
+      lcdPlayState.textContent = (audioBuffer || (isElementSource && audioElement)) ? 'STOPPED' : 'READY';
+    }
+
+    function formatTime(sec) {
+      if (!isFinite(sec) || isNaN(sec) || sec < 0) return '00:00';
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    // --- EVENT LISTENERS ---
+    vizContainer.addEventListener('click', () => {
+      vizMode = vizMode === 'spectrum' ? 'oscilloscope' : 'spectrum';
+      vizModeLabel.textContent = vizMode === 'spectrum'
+        ? '[SPECTRUM ANALYSER - CLICK TO SWITCH]'
+        : '[WAVEFORM OSCILLOSCOPE - CLICK TO SWITCH]';
+    });
+
+    btnBypass.addEventListener('click', () => {
+      isDspBypassed = !isDspBypassed;
+      btnBypass.classList.toggle('active', isDspBypassed);
+      btnBypass.textContent = isDspBypassed ? 'DIRECT (ON)' : 'DIRECT (OFF)';
+      applyAllDspParameters();
+    });
+
+    // --- PLAYLIST MANAGEMENT & FAST RENDERING ---
+    function formatFileSize(bytes) {
+      if (!bytes) return '';
+      const mb = bytes / (1024 * 1024);
+      return mb >= 1 ? `${mb.toFixed(1)} MB` : `${Math.round(bytes / 1024)} KB`;
+    }
+
+    function updateLcdTrackBadge() {
+      if (playlist.length === 0 || currentTrackIndex < 0) {
+        lcdTrackIndex.textContent = 'TRK 00/00';
+      } else {
+        const cur = String(currentTrackIndex + 1).padStart(2, '0');
+        const tot = String(playlist.length).padStart(2, '0');
+        lcdTrackIndex.textContent = `TRK ${cur}/${tot}`;
+      }
+      playlistCount.textContent = `${playlist.length} TRACK${playlist.length === 1 ? '' : 'S'}`;
+    }
+
+    // Lightweight active row update without full DOM recreation
+    function updateActivePlaylistItem() {
+      updateLcdTrackBadge();
+      const rows = playlistContainer.querySelectorAll('.track-row');
+      rows.forEach((row, idx) => {
+        const isCurrent = idx === currentTrackIndex;
+        const numSpan = row.querySelector('.track-num');
+        if (isCurrent) {
+          row.className = 'track-row flex items-center justify-between px-3.5 py-2.5 cursor-pointer transition bg-cyan-950/60 text-cyan-200 font-bold';
+          if (numSpan) {
+            numSpan.className = 'track-num w-6 text-right text-amber-400';
+            numSpan.textContent = '▶';
+          }
+        } else {
+          row.className = 'track-row flex items-center justify-between px-3.5 py-2.5 cursor-pointer transition hover:bg-neutral-900/90 text-slate-300';
+          if (numSpan) {
+            numSpan.className = 'track-num w-6 text-right text-neutral-500';
+            numSpan.textContent = String(idx + 1).padStart(2, '0');
+          }
+        }
+      });
+    }
+
+    // Full playlist render with single DOM insertion
+    function renderPlaylist() {
+      updateLcdTrackBadge();
+      if (playlist.length === 0) {
+        playlistContainer.innerHTML = `
+          <div class="p-4 text-center text-neutral-500">
+            NO TRACKS IN QUEUE — DROP MULTIPLE FLAC / AUDIO FILES HERE OR CLICK [+ ADD TRACKS]
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      for (let idx = 0; idx < playlist.length; idx++) {
+        const item = playlist[idx];
+        const isCurrent = idx === currentTrackIndex;
+        html += `
+          <div data-track-index="${idx}" class="track-row flex items-center justify-between px-3.5 py-2.5 cursor-pointer transition ${
+            isCurrent ? 'bg-cyan-950/60 text-cyan-200 font-bold' : 'hover:bg-neutral-900/90 text-slate-300'
+          }">
+            <div class="flex items-center gap-3 overflow-hidden pr-2 flex-1 pointer-events-none">
+              <span class="track-num w-6 text-right ${isCurrent ? 'text-amber-400' : 'text-neutral-500'}">
+                ${isCurrent ? '▶' : String(idx + 1).padStart(2, '0')}
+              </span>
+              <span class="truncate">${escapeHtml(item.title)}</span>
+            </div>
+            <div class="flex items-center gap-2.5 shrink-0">
+              <span class="px-1.5 py-0.5 text-[10px] rounded bg-neutral-900 border border-neutral-700 text-cyan-400 uppercase pointer-events-none">${escapeHtml(item.ext)}</span>
+              <span class="text-[11px] text-neutral-500 w-14 text-right hidden sm:inline-block pointer-events-none">${item.sizeText}</span>
+              <button data-del-index="${idx}" title="Remove track" class="del-btn text-neutral-500 hover:text-rose-400 px-1.5 py-0.5 rounded transition">✕</button>
+            </div>
+          </div>
+        `;
+      }
+      playlistContainer.innerHTML = html;
+    }
+
+    // Event Delegation on Playlist Container (1 listener for all tracks)
+    playlistContainer.addEventListener('click', (e) => {
+      const delBtn = e.target.closest('[data-del-index]');
+      if (delBtn) {
+        e.stopPropagation();
+        const idx = parseInt(delBtn.dataset.delIndex, 10);
+        if (!isNaN(idx)) removePlaylistIndex(idx);
+        return;
+      }
+      const trackRow = e.target.closest('[data-track-index]');
+      if (trackRow) {
+        const idx = parseInt(trackRow.dataset.trackIndex, 10);
+        if (!isNaN(idx)) playPlaylistIndex(idx);
+      }
+    });
+
+    function addFilesToPlaylist(fileList) {
+      const files = Array.from(fileList).filter(f => f && f.name);
+      if (files.length === 0) return;
+
+      const wasEmpty = playlist.length === 0;
+      const firstNewIndex = playlist.length;
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const ext = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : 'audio';
+        const title = file.name.replace(/\.[^/.]+$/, "");
+        playlist.push({
+          id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+          title,
+          ext,
+          sizeText: formatFileSize(file.size),
+          file,
+          isDemo: false
+        });
+      }
+
+      renderPlaylist();
+
+      if (wasEmpty || !isPlaying) {
+        playPlaylistIndex(firstNewIndex);
+      }
+    }
+
+    function removePlaylistIndex(idx) {
+      if (idx < 0 || idx >= playlist.length) return;
+      const wasPlayingThis = (idx === currentTrackIndex);
+      playlist.splice(idx, 1);
+
+      if (playlist.length === 0) {
+        currentTrackIndex = -1;
+        stopAudio();
+        revokeCurrentUrl();
+        lcdTitle.textContent = 'CLICK [OPEN / ADD FILES] TO LOAD TRACKS';
+      } else if (wasPlayingThis) {
+        const nextIdx = Math.min(idx, playlist.length - 1);
+        playPlaylistIndex(nextIdx);
+      } else if (idx < currentTrackIndex) {
+        currentTrackIndex--;
+      }
+      renderPlaylist();
+    }
+
+    function playPlaylistIndex(idx) {
+      if (idx < 0 || idx >= playlist.length) return;
+      currentTrackIndex = idx;
+      updateActivePlaylistItem();
+      const item = playlist[idx];
+      if (item.isDemo) {
+        generateHiResDemo(false);
+      } else {
+        handleAudioFile(item.file);
+      }
+    }
+
+    function handleTrackEnded() {
+      if (repeatMode === 'one' && currentTrackIndex >= 0) {
+        playPlaylistIndex(currentTrackIndex);
+        return;
+      }
+      if (playlist.length > 0) {
+        if (isShuffle && playlist.length > 1) {
+          let nextIdx = currentTrackIndex;
+          while (nextIdx === currentTrackIndex) {
+            nextIdx = Math.floor(Math.random() * playlist.length);
+          }
+          playPlaylistIndex(nextIdx);
+          return;
+        }
+        const nextIdx = currentTrackIndex + 1;
+        if (nextIdx < playlist.length) {
+          playPlaylistIndex(nextIdx);
+          return;
+        } else if (repeatMode === 'all') {
+          playPlaylistIndex(0);
+          return;
+        }
+      }
+      stopAudio();
+      lcdPlayState.textContent = 'FINISHED';
+    }
+
+    btnPrev.addEventListener('click', () => {
+      if (playlist.length === 0) return;
+      const curTime = (isElementSource && audioElement) ? audioElement.currentTime : (isPlaying ? audioCtx.currentTime - startTime : pauseOffset);
+      if (curTime > 3) {
+        playPlaylistIndex(currentTrackIndex);
+        return;
+      }
+      let prevIdx = currentTrackIndex - 1;
+      if (prevIdx < 0) prevIdx = playlist.length - 1;
+      playPlaylistIndex(prevIdx);
+    });
+
+    btnNext.addEventListener('click', () => {
+      if (playlist.length === 0) return;
+      if (isShuffle && playlist.length > 1) {
+        let nextIdx = currentTrackIndex;
+        while (nextIdx === currentTrackIndex) {
+          nextIdx = Math.floor(Math.random() * playlist.length);
+        }
+        playPlaylistIndex(nextIdx);
+        return;
+      }
+      const nextIdx = (currentTrackIndex + 1) % playlist.length;
+      playPlaylistIndex(nextIdx);
+    });
+
+    btnRepeat.addEventListener('click', () => {
+      if (repeatMode === 'all') {
+        repeatMode = 'one';
+        btnRepeat.textContent = '🔂 ONE';
+        btnRepeat.classList.add('active');
+      } else if (repeatMode === 'one') {
+        repeatMode = 'off';
+        btnRepeat.textContent = '🔁 OFF';
+        btnRepeat.classList.remove('active');
+      } else {
+        repeatMode = 'all';
+        btnRepeat.textContent = '🔁 ALL';
+        btnRepeat.classList.add('active');
+      }
+    });
+
+    btnShuffle.addEventListener('click', () => {
+      isShuffle = !isShuffle;
+      btnShuffle.classList.toggle('active', isShuffle);
+      btnShuffle.classList.toggle('text-neutral-400', !isShuffle);
+    });
+
+    btnClearPlaylist.addEventListener('click', () => {
+      playlist = [];
+      currentTrackIndex = -1;
+      stopAudio();
+      revokeCurrentUrl();
+      lcdTitle.textContent = 'PLAYLIST CLEARED — ADD NEW FILES';
+      renderPlaylist();
+    });
+
+    btnPlay.addEventListener('click', () => {
+      initAudioGraph();
+      if (!audioBuffer && (!isElementSource || !audioElement)) {
+        if (playlist.length > 0) {
+          playPlaylistIndex(Math.max(0, currentTrackIndex));
+        } else {
+          fileInput.click();
+        }
+        return;
+      }
+      if (isElementSource && audioElement) {
+        if (audioElement.paused) {
+          audioElement.play().then(() => {
+            isPlaying = true;
+            playIcon.textContent = '❚❚';
+            playBtnText.textContent = 'PAUSE';
+            lcdPlayState.textContent = 'PLAYING';
+          }).catch(err => {
+            console.warn('Playback error:', err);
+            lcdPlayState.textContent = 'CLICK PLAY';
+          });
+        } else {
+          audioElement.pause();
+          isPlaying = false;
+          playIcon.textContent = '▶';
+          playBtnText.textContent = 'RESUME';
+          lcdPlayState.textContent = 'PAUSED';
+        }
+        return;
+      }
+      if (isPlaying) {
+        pauseAudio();
+      } else {
+        playAudio(pauseOffset);
+      }
+    });
+
+    btnStop.addEventListener('click', stopAudio);
+
+    // Smooth seek interaction without layout conflict
+    seekBar.addEventListener('pointerdown', () => { isUserSeeking = true; });
+    window.addEventListener('pointerup', () => { isUserSeeking = false; });
+    window.addEventListener('pointercancel', () => { isUserSeeking = false; });
+
+    seekBar.addEventListener('input', (e) => {
+      const dur = audioBuffer ? audioBuffer.duration : (audioElement ? audioElement.duration : 0);
+      if (!dur || !isFinite(dur)) return;
+      const target = (e.target.value / 100) * dur;
+      lcdCurTime.textContent = formatTime(target);
+    });
+
+    seekBar.addEventListener('change', (e) => {
+      const dur = audioBuffer ? audioBuffer.duration : (audioElement ? audioElement.duration : 0);
+      if (!dur || !isFinite(dur)) return;
+      const target = (e.target.value / 100) * dur;
+      pauseOffset = target;
+      if (isElementSource && audioElement) {
+        audioElement.currentTime = target;
+      } else if (isPlaying) {
+        playAudio(target);
+      }
+      isUserSeeking = false;
+    });
+
+    volSlider.addEventListener('input', (e) => {
+      const vol = parseFloat(e.target.value);
+      if (masterGain) setAudioParam(masterGain.gain, vol, 0.015);
+      volText.textContent = `${Math.round(vol * 100)}%`;
+    });
+
+    // --- DSP INTERACTIVE CONTROLS ---
+    function updateSxbs() {
+      const val = parseFloat(sliderSxbs.value);
+      valSxbs.textContent = `+${val.toFixed(1)} dB`;
+      applyAllDspParameters();
+      badgeSxbs.style.opacity = (chkSxbs.checked && val > 0) ? '1' : '0.3';
+    }
+    sliderSxbs.addEventListener('input', updateSxbs);
+    chkSxbs.addEventListener('change', updateSxbs);
+
+    function updateRemaster() {
+      const val = parseFloat(sliderRemaster.value);
+      valRemaster.textContent = `${val}%`;
+      applyAllDspParameters();
+      badgeRemaster.style.opacity = (chkRemaster.checked && val > 0) ? '1' : '0.3';
+    }
+    sliderRemaster.addEventListener('input', updateRemaster);
+    chkRemaster.addEventListener('change', updateRemaster);
+
+    function update3d() {
+      const val = parseFloat(slider3d.value);
+      val3d.textContent = `${val}%`;
+      applyAllDspParameters();
+      badge3d.style.opacity = (chk3d.checked && val > 0) ? '1' : '0.3';
+    }
+    slider3d.addEventListener('input', update3d);
+    chk3d.addEventListener('change', update3d);
+
+    function updateAgcControl() {
+      const val = parseFloat(sliderAgc.value);
+      valAgc.textContent = `${val.toFixed(1)} dB`;
+      applyAllDspParameters();
+      badgeAgc.style.opacity = chkAgc.checked ? '1' : '0.3';
+    }
+    sliderAgc.addEventListener('input', updateAgcControl);
+    chkAgc.addEventListener('change', updateAgcControl);
+
+    // 5-Band EQ sliders & Presets with cached elements
+    eqSliders.forEach((slider, idx) => {
+      const valLabel = eqValLabels[idx];
+      if (slider && valLabel) {
+        slider.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          valLabel.textContent = `${val > 0 ? '+' : ''}${val}dB`;
+          if (eqFilters[idx] && audioCtx) {
+            setAudioParam(eqFilters[idx].gain, val, 0.02);
+          }
+        });
+      }
+    });
+
+    const presets = {
+      flat:  [0, 0, 0, 0, 0],
+      heavy: [6, 3, -1, 2, 4],
+      clear: [1, 0, 0, 2, 4],
+      vocal: [-2, 1, 4, 3, 1]
+    };
+
+    const presetButtons = document.querySelectorAll('.eq-preset');
+    presetButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        presetButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const curve = presets[btn.dataset.preset] || presets.flat;
+        curve.forEach((gain, idx) => {
+          const slider = eqSliders[idx];
+          const valLabel = eqValLabels[idx];
+          if (slider && valLabel) {
+            slider.value = gain;
+            valLabel.textContent = `${gain > 0 ? '+' : ''}${gain}dB`;
+          }
+        });
+        applyAllDspParameters();
+      });
+    });
+
+    // --- FILE LOADER (WEB AUDIO BUFFER + HTML5 STREAM FALLBACK) ---
+    const mimeMap = {
+      flac: 'audio/flac',
+      wav: 'audio/wav',
+      mp3: 'audio/mpeg',
+      ogg: 'audio/ogg',
+      m4a: 'audio/mp4',
+      aac: 'audio/aac',
+      webm: 'audio/webm'
+    };
+
+    function getMimeType(filename) {
+      const ext = filename.split('.').pop().toLowerCase();
+      return mimeMap[ext] || 'audio/flac';
+    }
+
+    function setupHtml5Stream(file, rawBuffer, flacInfo) {
+      stopAudio();
+      initAudioGraph();
+      revokeCurrentUrl();
+
+      if (!audioElement) {
+        audioElement = new Audio();
+        audioElement.preload = 'auto';
+        audioSourceNode = audioCtx.createMediaElementSource(audioElement);
+        connectSourceToDsp(audioSourceNode);
+
+        audioElement.onended = () => {
+          handleTrackEnded();
+        };
+
+        audioElement.onloadedmetadata = () => {
+          const dur = audioElement.duration;
+          if (isFinite(dur) && dur > 0) {
+            lcdTotalTime.textContent = formatTime(dur);
+            const kbps = Math.round((currentPlayingFileSize * 8) / dur / 1000);
+            lcdBitrate.textContent = `${kbps} kbps`;
+          } else {
+            lcdBitrate.textContent = 'VARIABLE';
+          }
+        };
+
+        audioElement.oncanplay = () => {
+          if (!isPlaying) {
+            audioElement.play().then(() => {
+              isPlaying = true;
+              playIcon.textContent = '❚❚';
+              playBtnText.textContent = 'PAUSE';
+              lcdPlayState.textContent = 'PLAYING';
+            }).catch(() => {
+              lcdPlayState.textContent = 'PRESS ▶ PLAY';
+            });
+          }
+        };
+
+        audioElement.onerror = () => {
+          lcdTitle.textContent = 'FORMAT DECODE ERROR — TRY ANOTHER FILE';
+          lcdPlayState.textContent = 'ERROR';
+        };
+      }
+
+      currentPlayingFileSize = file.size || 0;
+      const ext = file.name.split('.').pop().toLowerCase();
+      const mimeType = file.type || getMimeType(file.name);
+      const sourceBuffer = (flacInfo && flacInfo.cleanBuffer) ? flacInfo.cleanBuffer : rawBuffer;
+      const blob = sourceBuffer ? new Blob([sourceBuffer], { type: mimeType }) : file;
+
+      currentObjectUrl = URL.createObjectURL(blob);
+      isElementSource = true;
+      audioBuffer = null;
+
+      lcdTitle.textContent = file.name.replace(/\.[^/.]+$/, "").toUpperCase();
+      const sr = (flacInfo && flacInfo.sampleRate) ? flacInfo.sampleRate : audioCtx.sampleRate;
+      const bits = (flacInfo && flacInfo.bitsPerSample) ? flacInfo.bitsPerSample : 24;
+      lcdCodec.textContent = `${ext.toUpperCase()} ${bits}-BIT`;
+      lcdSampleRate.textContent = `${(sr / 1000).toFixed(1)} kHz`;
+
+      audioElement.src = currentObjectUrl;
+      audioElement.load();
+    }
+
+    async function handleAudioFile(file) {
+      if (!file) return;
+      initAudioGraph();
+      stopAudio();
+      revokeCurrentUrl();
+
+      lcdTitle.textContent = `LOADING: ${file.name.toUpperCase()}`;
+      lcdPlayState.textContent = 'DECODING...';
+
+      const ext = file.name.split('.').pop().toLowerCase();
+
+      try {
+        const rawBuffer = await file.arrayBuffer();
+        const flacInfo = inspectAndSanitizeFlac(rawBuffer);
+
+        let decodedBuffer = null;
+
+        // Stage 1: Try decoding clean buffer (ID3v2 stripped if present)
+        try {
+          const targetBuf = (flacInfo && flacInfo.cleanBuffer) ? flacInfo.cleanBuffer : rawBuffer.slice(0);
+          decodedBuffer = await audioCtx.decodeAudioData(targetBuf);
+        } catch (err1) {
+          // Stage 2: If FLAC has heavy/corrupted picture metadata blocks, decode stripped FLAC stream
+          if (flacInfo && flacInfo.strippedBuffer) {
+            try {
+              decodedBuffer = await audioCtx.decodeAudioData(flacInfo.strippedBuffer);
+            } catch (err2) {
+              console.warn('Stripped FLAC decode failed, falling back to HTML5 stream:', err2);
+            }
+          }
+        }
+
+        if (decodedBuffer) {
+          isElementSource = false;
+          audioBuffer = decodedBuffer;
+
+          const sr = (flacInfo && flacInfo.sampleRate) ? flacInfo.sampleRate : decodedBuffer.sampleRate;
+          const bits = (flacInfo && flacInfo.bitsPerSample) ? flacInfo.bitsPerSample : 24;
+          const kbps = Math.round((file.size * 8) / decodedBuffer.duration / 1000);
+
+          lcdTitle.textContent = file.name.replace(/\.[^/.]+$/, "").toUpperCase();
+          lcdCodec.textContent = `${ext.toUpperCase()} ${bits}-BIT`;
+          lcdSampleRate.textContent = `${(sr / 1000).toFixed(1)} kHz`;
+          lcdBitrate.textContent = `${kbps} kbps`;
+          lcdTotalTime.textContent = formatTime(decodedBuffer.duration);
+
+          playAudio(0);
+          return;
+        }
+
+        // Stage 3: Fallback to HTML5 MediaElement stream
+        setupHtml5Stream(file, rawBuffer, flacInfo);
+      } catch (readErr) {
+        console.error('File read error:', readErr);
+        lcdTitle.textContent = 'FILE READ ERROR';
+        lcdPlayState.textContent = 'ERROR';
+      }
+    }
+
+    fileInput.addEventListener('click', () => {
+      fileInput.value = '';
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        addFilesToPlaylist(e.target.files);
+      }
+    });
+
+    // Drag & Drop File Support
+    window.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      playerChassis.classList.add('drop-active');
+    });
+    window.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      playerChassis.classList.remove('drop-active');
+    });
+    window.addEventListener('drop', (e) => {
+      e.preventDefault();
+      playerChassis.classList.remove('drop-active');
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        addFilesToPlaylist(e.dataTransfer.files);
+      }
+    });
+
+    // --- PROCEDURAL 96kHz HI-RES SYNTH DEMO (HIGH PERFORMANCE LOOP) ---
+    function generateHiResDemo(addToQueue = true) {
+      initAudioGraph();
+      stopAudio();
+      revokeCurrentUrl();
+      isElementSource = false;
+
+      if (addToQueue) {
+        let demoIdx = playlist.findIndex(item => item.isDemo);
+        if (demoIdx === -1) {
+          playlist.push({
+            id: 'demo-96khz',
+            title: '96kHz HI-RES ACOUSTIC SYNTH (INTERNAL)',
+            ext: 'PCM 32B',
+            sizeText: 'SYNTH',
+            file: null,
+            isDemo: true
+          });
+          demoIdx = playlist.length - 1;
+          renderPlaylist();
+        }
+        currentTrackIndex = demoIdx;
+        updateActivePlaylistItem();
+      }
+
+      const sr = audioCtx.sampleRate || 96000;
+      lcdTitle.textContent = '96kHz HI-RES ACOUSTIC SYNTH (INTERNAL)';
+      lcdCodec.textContent = 'PCM 32-BIT FLOAT';
+      lcdSampleRate.textContent = `${(sr / 1000).toFixed(1)} kHz`;
+      lcdBitrate.textContent = `${Math.round((sr * 24 * 2) / 1000)} kbps`;
+      lcdPlayState.textContent = 'SYNTHESIZING...';
+
+      const duration = 16.0;
+      const numFrames = Math.floor(sr * duration);
+      const buf = audioCtx.createBuffer(2, numFrames, sr);
+      const chL = buf.getChannelData(0);
+      const chR = buf.getChannelData(1);
+
+      const bpm = 118;
+      const beatSec = 60 / bpm;
+      const halfBeatSec = beatSec * 0.5;
+      const samplesPerBeat = Math.round(sr * beatSec);
+      const samplesPerHalfBeat = Math.round(sr * halfBeatSec);
+      const hatOffsetSamples = Math.round(sr * (beatSec * 0.25));
+      const PI2 = 2 * Math.PI;
+
+      const chords = [
+        [220.00, 261.63, 329.63, 392.00], // Am7
+        [174.61, 220.00, 261.63, 329.63], // Fmaj7
+        [196.00, 246.94, 293.66, 392.00], // G7
+        [164.81, 196.00, 246.94, 329.63]  // Em7
+      ];
+
+      const maxFreq = (sr * 0.5) - 1200;
+
+      // High-performance audio generation loop
+      for (let i = 0; i < numFrames; i++) {
+        const t = i / sr;
+        const currentBeat = Math.floor(i / samplesPerBeat);
+        const barIdx = Math.floor(currentBeat * 0.25) & 3;
+
+        // Sub-bass Kick (52Hz) + Bassline for S-XBS test
+        const kickSample = i % samplesPerHalfBeat;
+        const kickTime = kickSample / sr;
+        let kick = 0;
+        if (kickTime < 0.28) {
+          const kickFreq = 52 + 80 * Math.exp(-kickTime * 35);
+          kick = Math.sin(PI2 * kickFreq * kickTime) * Math.exp(-kickTime * 14) * 0.52;
+        }
+
+        // Crisp Hi-Hat (8kHz - 14kHz)
+        const hatSample = (i + hatOffsetSamples) % samplesPerHalfBeat;
+        const hatTime = hatSample / sr;
+        let hat = 0;
+        if (hatTime < 0.06) {
+          hat = (Math.random() * 2 - 1) * Math.exp(-hatTime * 55) * 0.12;
+        }
+
+        // Warm Pad Chords
+        let padL = 0, padR = 0;
+        const chord = chords[barIdx];
+        for (let c = 0; c < 4; c++) {
+          const v = Math.sin(PI2 * chord[c] * t + c) * 0.055;
+          padL += v * ((c & 1) === 0 ? 1.1 : 0.8);
+          padR += v * ((c & 1) === 1 ? 1.1 : 0.8);
+        }
+
+        // Ultrasonic Hi-Res Chimes (14kHz ~ 20kHz)
+        const chimeSample = i % samplesPerBeat;
+        const chimeTime = chimeSample / sr;
+        let chimeL = 0, chimeR = 0;
+        if (chimeTime < 0.35) {
+          const chimeFreq = Math.min(15500 + (barIdx * 1100), maxFreq);
+          const cEnv = Math.exp(-chimeTime * 12) * 0.11;
+          chimeL = Math.sin(PI2 * chimeFreq * t) * cEnv;
+          chimeR = Math.cos(PI2 * Math.min(chimeFreq + 400, maxFreq) * t) * cEnv;
+        }
+
+        chL[i] = kick + padL + hat + chimeL;
+        chR[i] = kick + padR + hat + chimeR;
+      }
+
+      audioBuffer = buf;
+      lcdTotalTime.textContent = formatTime(buf.duration);
+      playAudio(0);
+    }
+
+    btnDemo.addEventListener('click', () => generateHiResDemo(true));
+
+    // --- VISUALIZER RESIZE & GRADIENT CACHING ---
+    function resizeCanvas() {
+      const rect = vizContainer.getBoundingClientRect();
+      const w = Math.floor(rect.width);
+      const h = Math.floor(rect.height);
+      if (w > 0 && h > 0 && (canvas.width !== w || canvas.height !== h)) {
+        canvas.width = w;
+        canvas.height = h;
+        canvasW = w;
+        canvasH = h;
+
+        // Pre-create and cache gradients for 60fps rendering (0 allocations per frame)
+        normalGrad = ctx.createLinearGradient(0, h, 0, 0);
+        normalGrad.addColorStop(0, '#0369a1');
+        normalGrad.addColorStop(0.6, '#06b6d4');
+        normalGrad.addColorStop(1, '#a5f3fc');
+
+        hiResGrad = ctx.createLinearGradient(0, h, 0, 0);
+        hiResGrad.addColorStop(0, '#78350f');
+        hiResGrad.addColorStop(0.6, '#f59e0b');
+        hiResGrad.addColorStop(1, '#fef08a');
+      }
+    }
+
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(() => resizeCanvas());
+      ro.observe(vizContainer);
+    } else {
+      window.addEventListener('resize', resizeCanvas);
+    }
+
+    // --- ZERO-GC VISUALIZER LOOP (SPECTRUM + OSCILLOSCOPE) ---
+    function startVisualizer() {
+      const bufferLength = analyserNode.frequencyBinCount;
+      const freqArray = new Uint8Array(bufferLength);
+      const timeArray = new Uint8Array(bufferLength);
+      const inv128 = 1 / 128.0;
+
+      function draw() {
+        requestAnimationFrame(draw);
+
+        if (!normalGrad || !hiResGrad) {
+          resizeCanvas();
+          if (!normalGrad) return;
+        }
+
+        const width = canvasW;
+        const height = canvasH;
+
+        ctx.fillStyle = '#041017';
+        ctx.fillRect(0, 0, width, height);
+
+        // Update time and seek bar without layout thrashing
+        if (isPlaying) {
+          let cur = 0;
+          let total = 0;
+          if (isElementSource && audioElement) {
+            cur = audioElement.currentTime;
+            total = audioElement.duration || 1;
+          } else if (audioBuffer) {
+            cur = audioCtx.currentTime - startTime;
+            total = audioBuffer.duration || 1;
+          }
+          if (isFinite(total) && total > 0) {
+            const timeStr = formatTime(cur);
+            if (timeStr !== lastRenderedTime) {
+              lcdCurTime.textContent = timeStr;
+              lastRenderedTime = timeStr;
+            }
+            if (!isUserSeeking) {
+              const pct = Math.min(100, (cur / total) * 100);
+              if (Math.abs(pct - lastSeekPct) > 0.08) {
+                seekBar.value = pct;
+                lastSeekPct = pct;
+              }
+            }
+          }
+        }
+
+        if (vizMode === 'spectrum') {
+          analyserNode.getByteFrequencyData(freqArray);
+          const barCount = 52;
+          const barWidth = (width / barCount) - 1.5;
+          const heightOffset = height - 12;
+
+          for (let i = 0; i < barCount; i++) {
+            const binIdx = Math.floor(Math.pow(i / barCount, 1.7) * (bufferLength / 2.6));
+            const val = freqArray[binIdx] || 0;
+            const barHeight = (val / 255) * heightOffset;
+
+            ctx.fillStyle = (i >= 38) ? hiResGrad : normalGrad;
+            const x = i * (barWidth + 1.5) + 2;
+            const y = height - barHeight - 2;
+            ctx.fillRect(x, y, barWidth, barHeight);
+          }
+        } else {
+          // Waveform Oscilloscope
+          analyserNode.getByteTimeDomainData(timeArray);
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#22d3ee';
+          ctx.beginPath();
+
+          const sliceWidth = width / bufferLength;
+          let x = 0;
+          const halfH = height * 0.5;
+
+          for (let i = 0; i < bufferLength; i++) {
+            const v = timeArray[i] * inv128;
+            const y = v * halfH;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+            x += sliceWidth;
+          }
+          ctx.lineTo(width, halfH);
+          ctx.stroke();
+        }
+      }
+
+      draw();
+    }
+  </script>
+</body>
+</html>
